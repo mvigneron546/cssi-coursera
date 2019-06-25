@@ -68,9 +68,10 @@ def max_flow(graph, from_, to):
     path = edge_BFS(from_, to)
     # generate first path
     while path:
-        print([(graph.edges[edge].u,graph.edges[edge].v) for edge in path])
+        # print([(graph.edges[edge].u,graph.edges[edge].v) for edge in path], path)
         # take maxflow of the remaining flows
         maxflow = min([graph.edges[edge].capacity - graph.edges[edge].flow for edge in path])
+        # print('Maxflow:', maxflow)
         for edge in path:
             graph.add_flow(edge, maxflow)
         flow += maxflow
@@ -79,44 +80,37 @@ def max_flow(graph, from_, to):
     # find mincut after pathing, set flow to cur_flow + mincut, set backward edges to edge.flow - mincut (just use add_flow to accomplish this)
     return flow
 
-def get_neighbors(node):
-    """gets all node edges and returns them."""
-    neighbors = list(filter(lambda x: x % 2 == 0, graph.graph[node]))
-    # print('Potential neighbors:', graph.graph[node])
-    # print('neighbors:', neighbors)
-    return neighbors
-
-def BFS(start, target):
-    '''
-    uses BFS to find the smallest sequence of steps to the target.
-    returns a list of steps.
-    '''
-    explored = set()
-    frontier = []
-    heappush(frontier, (0, start, [start]))
-    # search ops; len(curr_path) - 1 is the traversal_cost
-    while len(frontier) != 0:
-        current_node = heappop(frontier)
-        # print('Current Node:',current_node)
-        if current_node[1] == target:
-            return current_node[2]
-        elif current_node[1] not in explored:
-            explored.add(current_node[1])
-            neighbors = get_neighbors(current_node[1])
-            for neighbor in neighbors:
-                # if the neighbor isn't in explored and the remaining capacity != 0, add it to the pqueue
-                remaining_capacity = graph.edges[neighbor].capacity - graph.edges[neighbor].flow
-                destination = graph.edges[neighbor].v
-                # print('Capacity:',remaining_capacity)
-                if destination not in explored and remaining_capacity > 0:
-                    # taking destination node, as starting node is the one you're on
-                    curr_path = current_node[2][:]
-                    curr_path.append(destination)
-                    node = (len(curr_path) - 1, destination, curr_path)
-                    heappush(frontier,node)
-        # print('Frontier:',frontier)
-        # print('explored:', explored)
-    return [] # no path exists
+# def BFS(start, target):
+#     '''
+#     uses BFS to find the smallest sequence of steps to the target.
+#     returns a list of steps.
+#     '''
+#     explored = set()
+#     frontier = []
+#     heappush(frontier, (0, start, [start]))
+#     # search ops; len(curr_path) - 1 is the traversal_cost
+#     while len(frontier) != 0:
+#         current_node = heappop(frontier)
+#         # print('Current Node:',current_node)
+#         if current_node[1] == target:
+#             return current_node[2]
+#         elif current_node[1] not in explored:
+#             explored.add(current_node[1])
+#             neighbors = get_neighbors(current_node[1])
+#             for neighbor in neighbors:
+#                 # if the neighbor isn't in explored and the remaining capacity != 0, add it to the pqueue
+#                 remaining_capacity = graph.edges[neighbor].capacity - graph.edges[neighbor].flow
+#                 destination = graph.edges[neighbor].v
+#                 # print('Capacity:',remaining_capacity)
+#                 if destination not in explored and remaining_capacity > 0:
+#                     # taking destination node, as starting node is the one you're on
+#                     curr_path = current_node[2][:]
+#                     curr_path.append(destination)
+#                     node = (len(curr_path) - 1, destination, curr_path)
+#                     heappush(frontier,node)
+#         # print('Frontier:',frontier)
+#         # print('explored:', explored)
+#     return [] # no path exists
 
 def edge_BFS(start, target):
     '''
@@ -133,17 +127,30 @@ def edge_BFS(start, target):
             return current_node[2]
         elif current_node[1] not in explored:
             explored.add(current_node[1])
-            neighbors = get_neighbors(current_node[1])
+            # neighbors = get_neighbors(current_node[1])
+            neighbors = graph.graph[current_node[1]]
             for neighbor in neighbors:
-                remaining_capacity = graph.edges[neighbor].capacity - graph.edges[neighbor].flow
                 destination = graph.edges[neighbor].v
-                if destination not in explored and remaining_capacity > 0:
-                    # taking destination node, as starting node is the one you're on
-                    curr_path = current_node[2][:]
-                    # append index of the edge as it appears in graph.edges
-                    curr_path.append(neighbor)
-                    node = (len(curr_path) - 1, destination, curr_path)
-                    heappush(frontier,node)
+                # print(frontier, neighbor, destination not in explored, neighbor % 2 == 0)
+                if neighbor % 2 == 0:
+                    remaining_capacity = graph.edges[neighbor].capacity - graph.edges[neighbor].flow
+                    # print(neighbor, remaining_capacity)
+                    if destination not in explored and remaining_capacity > 0:
+                        # taking destination node, as starting node is the one you're on
+                        curr_path = current_node[2][:]
+                        # append index of the edge as it appears in graph.edges
+                        curr_path.append(neighbor)
+                        node = (len(curr_path) - 1, destination, curr_path)
+                        heappush(frontier,node)
+                elif neighbor % 2 == 1:
+                    # only care about backwards edge when cancellations can be made (ie. the backwards node's flow == capacity)
+                    if abs(graph.edges[neighbor].flow) == graph.edges[neighbor^1].capacity and destination not in explored:
+                        # taking destination node, as starting node is the one you're on
+                        curr_path = current_node[2][:]
+                        # append index of the edge as it appears in graph.edges
+                        curr_path.append(neighbor)
+                        node = (len(curr_path) - 1, destination, curr_path)
+                        heappush(frontier,node)
     return [] # no path exists
 
 
@@ -151,5 +158,5 @@ if __name__ == '__main__':
     graph = read_data()
     # print(graph.graph)
     # print([(edge.u,edge.v) for edge in graph.edges])
-    # print(BFS(0, len(graph.graph)-1))
+    # print(edge_BFS(0, len(graph.graph)-1))
     print(max_flow(graph, 0, graph.size() - 1))
