@@ -123,7 +123,11 @@ class MaxMatching:
                     if adj_matrix[i][j] == 1:
                         crew_node = len(adj_matrix) + 1 + j
                         self.graph.add_edge(flight_node, crew_node, 1)
-                        self.graph.add_edge(crew_node, n + m + 1, 1)
+        # connect all crews to the end_node
+        for j in range(len(adj_matrix[0])):
+            crew_node = len(adj_matrix) + 1 + j
+            self.graph.add_edge(crew_node, n + m + 1, 1)
+        # print([(edge.u, edge.v) for edge in self.graph.edges if edge.u == 101 or edge.v == 101])
         return adj_matrix
 
     def write_response(self, matching):
@@ -135,23 +139,26 @@ class MaxMatching:
         # matching correctly in all cases.
         n = len(adj_matrix)
         m = len(adj_matrix[0])
-        max_flow(max_matching.graph, 0, n + m + 1)
+        max_flow(self.graph, 0, n + m + 1)
+        # print([(edge.u, edge.v, edge.flow) for edge in self.graph.edges if edge.v != n+m+1]) # if edge.flow == 1 and edge.u != 0 and edge.v != n + m + 1]))
+        # print(self.graph.graph)
         matching = [-1] * n
-        busy_right = [False] * m
-        for i in range(n):
-            for j in range(m):
-                if adj_matrix[i][j] and matching[i] == -1 and (not busy_right[j]):
-                    matching[i] = j
-                    busy_right[j] = True
+        for edge in self.graph.edges:
+            # if edge.v == 101:
+            #     print('Edge:', edge.u, edge.v)
+            if edge.flow == 1 and edge.u != 0 and edge.v != n + m + 1:
+                # flights are flight-1; crews are index-len(flights)-1
+                # print('Edge combo:', 'Former Start:', edge.u, 'Start:', edge.u-1, 'Former End:', edge.v, 'End:', edge.v - n - 1)
+                matching[edge.u - 1] = edge.v - n - 1
         return matching
 
     def solve(self):
         adj_matrix = self.read_data()
+        # print(adj_matrix)
+        # print([(edge.u, edge.v) for edge in self.graph.edges])
         matching = self.find_matching(adj_matrix)
         self.write_response(matching)
 
 if __name__ == '__main__':
     max_matching = MaxMatching()
-    adj_matrix = max_matching.read_data()
-    # print())
-    # max_matching.solve()
+    max_matching.solve()

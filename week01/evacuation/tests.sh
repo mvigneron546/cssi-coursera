@@ -12,6 +12,7 @@ do
     echo Incorrect Answer!
     echo Program Output: $output
     echo Answer: $answer
+    break
   fi
   echo
 done
