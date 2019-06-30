@@ -68,10 +68,8 @@ def max_flow(graph, from_, to):
     path = edge_BFS(from_, to)
     # generate first path
     while path:
-        # print([(graph.edges[edge].u,graph.edges[edge].v) for edge in path], path)
         # take maxflow of the remaining flows
         maxflow = min([graph.edges[edge].capacity - graph.edges[edge].flow for edge in path])
-        # print('Maxflow:', maxflow)
         for edge in path:
             graph.add_flow(edge, maxflow)
         flow += maxflow
@@ -131,10 +129,8 @@ def edge_BFS(start, target):
             neighbors = graph.graph[current_node[1]]
             for neighbor in neighbors:
                 destination = graph.edges[neighbor].v
-                # print(frontier, neighbor, destination not in explored, neighbor % 2 == 0)
                 if neighbor % 2 == 0:
                     remaining_capacity = graph.edges[neighbor].capacity - graph.edges[neighbor].flow
-                    # print(neighbor, remaining_capacity)
                     if destination not in explored and remaining_capacity > 0:
                         # taking destination node, as starting node is the one you're on
                         curr_path = current_node[2][:]

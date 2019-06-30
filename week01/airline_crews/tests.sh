@@ -1,9 +1,9 @@
 #!/bin/bash
 
-for i in 0{1..9} {10..36}
+for i in 0{1..9} {10..31}
 do
   echo Problem $i:
-  output=$(python3 evacuation.py < tests/$i)
+  output=$(python3 airline_crews.py < tests/$i)
   answer=$(cat tests/$i.a)
   if [ "$output" == "$answer" ]
   then

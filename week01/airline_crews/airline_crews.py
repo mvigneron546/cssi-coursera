@@ -30,4 +30,5 @@ class MaxMatching:
 
 if __name__ == '__main__':
     max_matching = MaxMatching()
+    # print(max_matching.read_data())
     max_matching.solve()
