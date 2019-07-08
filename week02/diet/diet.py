@@ -3,8 +3,9 @@ from sys import stdin
 
 class Equation:
     def __init__(self, a, b):
-        self.a = a
-        self.b = b
+        self.a = a[:]
+        self.b = b[:]
+        self.orig_b = b[:]
 
 class Position:
     def __init__(self, column, row):
@@ -144,15 +145,19 @@ def check_solutions(m,A,b,equation,solns):
     for equation_index in range(len(A)):
         for index in range(m):
             total += A[equation_index][index] * solns[index]
-        # print(b, equation_index)
-        if total > b[equation_index]:
-            return False
+        # print(total, equation.a, equation.b)
+        if A[equation_index].count(1) == 1 and b[equation_index] == 0:
+            if total < b[equation_index]:
+                return 0
+        elif total > b[equation_index]:
+            return 0
         total = 0
-    if 10 ** 9 in equation.b:
+    # print(equation.orig_b)
+    if 10 ** 9 in equation.orig_b:
         return -1
-    return True
+    return 1
 
-def possible_infinity(n,m,A,b,c):
+def possible_infinity(m,A,c):
     """
     Checks to see if there are any cases where there are no limits on variables.
     Returns True if the following occurs:
@@ -161,15 +166,19 @@ def possible_infinity(n,m,A,b,c):
     False otherwise.
     """
     coefficient_present = False
-    for row in range(len(A)):
+    for row in range(len(orig_A)):
+        # print('ye')
         for column in range(m):
             if A[row][column] == 0:
-                for second_row in range(row+1,n):
-                    if A[second_row][column] > 0:
+                # print(row,column)
+                for second_row in range(row,len(orig_A)):
+                    # print(second_row, column, orig_A[second_row][column])
+                    if orig_A[second_row][column] > 0:
                         coefficient_present = True
                         break
                 if not coefficient_present and c[column] > 0:
                     return True
+            # coefficient_present = False
     return False
 
 def solve_diet_problem(n, m, A, b, c):
@@ -178,9 +187,10 @@ def solve_diet_problem(n, m, A, b, c):
     # print(b)
     # if there are more foods than there are restrictions, there may be a possible infinity
     if m > n:
-        if possible_infinity(n,m,A,b,c):
+        if possible_infinity(m,A,c):
             return [1,soln_set]
     equations = generate_all_subsets(A,b)
+    # print(equations[0].a, equations[0].b)
     solutions = []
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
@@ -188,13 +198,14 @@ def solve_diet_problem(n, m, A, b, c):
         solns = SolveEquation(equation)
         # print('Solution:', solns)
         if solns:
-            possible_negatives = [True if num >= 0 else False for num in solns]
-            if False not in possible_negatives:
-                indicator = check_solutions(m,A,b,equation,solns)
-                if indicator == 1:
-                    solutions.append(solns)
-                elif indicator == -1:
-                    return [1, soln_set]
+            # possible_negatives = [True if num >= 0 else False for num in solns]
+            # if False not in possible_negatives:
+            indicator = check_solutions(m,A,b,equation,solns)
+            # print(indicator)
+            if indicator == 1:
+                solutions.append(solns)
+            elif indicator == -1:
+                return [1, soln_set]
     # print(solutions)
     if not solutions:
         return [-1, soln_set]
@@ -225,10 +236,16 @@ def solve_diet_problem(n, m, A, b, c):
 
 n, m = list(map(int, stdin.readline().split()))
 A = []
+zero_list = [0 for i in range(m)]
 for i in range(n):
   A += [list(map(int, stdin.readline().split()))]
-A.append([1 for i in range(m)])
 b = list(map(int, stdin.readline().split()))
+orig_A = A[:]
+orig_B = b[:]
+for i in range(m):
+    A.append([0 for num in range(i)] + [1] + [0 for num in range(i+1,m)])
+    b.append(0)
+A.append([1 for i in range(m)])
 b.append(10 ** 9)
 c = list(map(int, stdin.readline().split()))
 # print(A,b,c)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in 0{1..6} 36 43
+for i in 0{1..9} 36 43
 do
   echo Problem $i:
   output=$(python3 diet.py < tests/$i)
