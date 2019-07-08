@@ -205,22 +205,33 @@ def solve_diet_problem(n, m, A, b, c):
     if not solutions:
         return [-1, soln_set]
     # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
-    rolling_total = 0
+    rolling_total = None
     total = 0
+    negatives_c = [factor >= 0 for factor in c]
+    # print(solutions, [(equation.a, equation.b) for equation in equations])
     # if the "true length", meaning the length without the 10^9 inequality is added in, then fulfill this cond
-    if len(A)-1 == 1 and len(b)-1 == 1:
-        if c[0] > 0:
-            rolling_total = solutions[0] * c[0]
-            soln_set = solutions[0]
-        return [0, soln_set]
+    # if len(A)-1 == 1 and len(b)-1 == 1:
+    #     if c[0] > 0:
+    #         rolling_total = solutions[0] * c[0]
+    #         soln_set = solutions[0]
+    #     return [0, soln_set]
     for solution in solutions:
         for i in range(m):
-            # if other options in that inequality exist, use them
-            if c[i] < 0 and len(A[0]) > 1:
-                solution[i] = 0
-            total += solution[i] * c[i]
+            # if all factors are negative, take the most positive total
+            if negatives_c.count(False) == len(negatives_c):
+                total += solution[i] * c[i]
+            else:
+                # if other options in that inequality exist, use them
+                if c[i] < 0 and len(A[0]) > 1:
+                    solution[i] = 0
+                total += solution[i] * c[i]
+        if rolling_total == None:
+            rolling_total = total
+            soln_set = solution
+        # print(total, rolling_total)
         # for negatives that have no choice
-        if total > rolling_total or (len(A[0]) == 1 and rolling_total == 0):
+        # print(soln_set)
+        if total > rolling_total: #or (len(A[0]) == 1 and rolling_total == 0):
             rolling_total = total
             soln_set = solution
         total = 0
