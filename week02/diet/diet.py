@@ -140,7 +140,7 @@ def generate_all_subsets(A,b):
     return equations
 
 def check_solutions(m,A,b,equation,solns):
-    """ checks solutions for validity. returns 1 if valid, 0 if not, and -1 if infinite. """
+    """ checks solutions for validity. returns True if valid, else False. """
     total = 0
     for equation_index in range(len(A)):
         for index in range(m):
@@ -150,12 +150,12 @@ def check_solutions(m,A,b,equation,solns):
             if total < b[equation_index]:
                 return 0
         elif total > b[equation_index]:
-            return 0
+            return False
         total = 0
     # print(equation.orig_b)
-    if 10 ** 9 in equation.orig_b:
-        return -1
-    return 1
+    # if 10 ** 9 in equation.orig_b:
+    #     return -1
+    return True
 
 def possible_infinity(m,A,c):
     """
@@ -169,7 +169,7 @@ def possible_infinity(m,A,c):
     for row in range(len(orig_A)):
         # print('ye')
         for column in range(m):
-            if A[row][column] == 0:
+            if orig_A[row][column] == 0:
                 # print(row,column)
                 for second_row in range(row,len(orig_A)):
                     # print(second_row, column, orig_A[second_row][column])
@@ -183,8 +183,10 @@ def possible_infinity(m,A,c):
 
 def solve_diet_problem(n, m, A, b, c):
     # Write your code here
-    soln_set = [0 * m]
-    # print(b)
+    soln_set = [0 for num in range(m)]
+    # case where pleasure factors are 0; no need to go any further
+    if c.count(0) == len(c):
+        return [0, soln_set]
     # if there are more foods than there are restrictions, there may be a possible infinity
     if m > n:
         if possible_infinity(m,A,c):
@@ -194,34 +196,24 @@ def solve_diet_problem(n, m, A, b, c):
     solutions = []
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
-        # print([(eq.a, eq.b) for eq in equations])
         solns = SolveEquation(equation)
-        # print('Solution:', solns)
         if solns:
-            # possible_negatives = [True if num >= 0 else False for num in solns]
-            # if False not in possible_negatives:
-            indicator = check_solutions(m,A,b,equation,solns)
+            # indicator = check_solutions(m,A,b,equation,solns)
             # print(indicator)
-            if indicator == 1:
+            if check_solutions(m,A,b,equation,solns):
                 solutions.append(solns)
-            elif indicator == -1:
-                return [1, soln_set]
-    # print(solutions)
     if not solutions:
         return [-1, soln_set]
     # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
     rolling_total = 0
     total = 0
-    # print(A,b)
     # if the "true length", meaning the length without the 10^9 inequality is added in, then fulfill this cond
     if len(A)-1 == 1 and len(b)-1 == 1:
-        # print('f')
         if c[0] > 0:
             rolling_total = solutions[0] * c[0]
             soln_set = solutions[0]
         return [0, soln_set]
     for solution in solutions:
-        # print(solution)
         for i in range(m):
             # if other options in that inequality exist, use them
             if c[i] < 0 and len(A[0]) > 1:
@@ -232,6 +224,10 @@ def solve_diet_problem(n, m, A, b, c):
             rolling_total = total
             soln_set = solution
         total = 0
+    # final check for infinity
+    for equation in equations:
+        if equation.b == soln_set and 10 ** 9 in equation.orig_b:
+            return [1, soln_set]
     return [0, soln_set]
 
 n, m = list(map(int, stdin.readline().split()))
