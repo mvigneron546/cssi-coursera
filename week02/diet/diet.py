@@ -25,7 +25,7 @@ def SelectPivotElement(a, used_rows, used_columns):
         pivot_element.column += 1
         if pivot_element.column >= len(used_columns):
             return Position(-1,-1)
-    # print('Element Selected:', a[pivot_element.row][pivot_element.column] )
+    # print('Element Selected:', pivot_element.row, pivot_element.column, )
     return pivot_element
 
 def SwapLines(a, b, used_rows, pivot_element):
@@ -59,6 +59,8 @@ def ProcessPivotElement(a, b, pivot_element):
                     for col_index in range(len(a[i])):
                         a[i][col_index] -= a[pivot_element.row][col_index]
                     b[i] -= b[pivot_element.row]
+                # print(a,b)
+
     # print('After all ops:', a, b)
 
 def MarkPivotElementUsed(pivot_element, used_rows, used_columns):
@@ -119,15 +121,15 @@ def generate_all_subsets(A,b):
 
 def check_solutions(m,A,b,solns):
     """ checks solutions for validity. returns True if valid, else False. """
+    epsilon = 10 ** -3
     total = 0
     for equation_index in range(len(A)):
         for index in range(m):
             total += A[equation_index][index] * solns[index]
-        # print(solns, total, (A[equation_index], b[equation_index]))#, equation.a, equation.b)
         if A[equation_index].count(1) == 1 and b[equation_index] == 0:
-            if total < b[equation_index]:
-                return False
-        elif total > b[equation_index]:
+                if total < b[equation_index]:
+                    return False
+        elif total > b[equation_index] + epsilon:
             return False
         total = 0
     # print()
@@ -165,8 +167,10 @@ def soln_rearrange(equation):
     b = equation.b
     return_list = [0 for i in range(len(b))]
     for row in range(len(a)):
+        # print(a[row])
         for column in range(len(a[0])):
             if a[row][column] == 1:
+                # print(row,column)
                 return_list[column] = b[row]
     equation.b = return_list
     return return_list
@@ -174,6 +178,7 @@ def soln_rearrange(equation):
 def solve_diet_problem(n, m, A, b, c):
     # Write your code here
     soln_set = [0 for num in range(m)]
+    cur_eq = None
     rolling_total = None
     total = 0
     # case where pleasure factors are 0; no need to go any further
@@ -189,22 +194,34 @@ def solve_diet_problem(n, m, A, b, c):
     solutions = []
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
+        # print()
         # print(equation.a, equation.b)
         solns = SolveEquation(equation)
-        # print(solns, equation.orig_a, equation.orig_b)
+        # print('Solution:', solns, equation.a, equation.b)
+        # print()
         if solns:
             # rearrange the solution list so that it matches up with the rest of the matrix
             solns = soln_rearrange(equation)
+            # print(solns)
+            # print('After rearranging:',solns, equation.a)
+            # print()
             if check_solutions(m,A,b,solns):
                 solutions.append(solns)
+                # print(solns, equation.orig_a, equation.orig_b)
                 for i in range(m):
                     total += solns[i] * c[i]
                 if rolling_total == None:
                     rolling_total = total
                     soln_set = solns
+                    cur_eq = equation
                 if total > rolling_total:
                     rolling_total = total
                     soln_set = solns
+                    cur_eq = equation
+                elif total == rolling_total and 10 ** 9 in cur_eq.orig_b:
+                    rolling_total = total
+                    soln_set = solns
+                    cur_eq = equation
                 total = 0
     if not solutions:
         return [-1, soln_set]
@@ -213,47 +230,6 @@ def solve_diet_problem(n, m, A, b, c):
             # print(equation.b, equation.orig_b)
             return [1, soln_set]
     return [0, soln_set]
-    # # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
-    # # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
-    # # negatives_c = [factor >= 0 for factor in c]
-    # # second_negatives_c = [factor < 0 for factor in c]
-    # # third_negatives_c = [factor == 0 for factor in c]
-    # for solution in solutions:
-    #     # something with 0 in c
-    #     for i in range(m):
-    #         # if one factor and solution exist and facotr>0, zeroing solution out is optimal
-    #         # note: "one solution" would mean len(A) = 3 because the other two ops are amt >= 0 and <= 10^9
-    #         # if len(A) == 3 and len(solution) == 1 and c[i] < 0:
-    #         #     solution[i] = 0
-    #         #     total += solution[i] * c[i]
-    #         # # if all factors are negative, take the most positive total
-    #         # elif negatives_c.count(False) == len(negatives_c) and len(solution) > 1:
-    #         #     total += solution[i] * c[i]
-    #         # # if all factors are either negative or 0, then (0,0) is the best answer
-    #         # elif second_negatives_c.count(True) + third_negatives_c.count(True) == len(second_negatives_c) and third_negatives_c.count(True) > 0:
-    #         #     return [0, soln_set]
-    #         # else:
-    #         #     # if other options in that inequality exist, use them
-    #         #     # ignore solns with 10^9 in orig_b
-    #         #     if c[i] < 0 and len(A[0]) > 1: #and 10**9 not in solutions_to_original[tuple(solution)]:
-    #         #         solution[i] = 0
-    #         total += solution[i] * c[i]
-    #     # print(total, soln_set)
-    #     if rolling_total == None:
-    #         rolling_total = total
-    #         soln_set = solution
-    #     if total > rolling_total:
-    #         rolling_total = total
-    #         soln_set = solution
-    #     total = 0
-    # # final check for infinity
-    # # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
-    # # print(soln_set, total)
-    # for equation in equations:
-    #     if equation.b == soln_set and 10 ** 9 in equation.orig_b:
-    #         # print(equation.b, equation.orig_b)
-    #         return [1, soln_set]
-    # return [0, soln_set]
 
 n, m = list(map(int, stdin.readline().split()))
 A = []
