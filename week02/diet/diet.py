@@ -107,58 +107,12 @@ def combo(param_list, integer, list_active=False):
                 returned_list.append(subset)
     return returned_list
 
-# print(combination([4,5,3],1))
-
-def combom(param_list, integer, list_active=False):
-    """
-    finds all possible combinations of sets of len integer; performs deepcopy if needed
-    Note: copies are modified
-    """
-    print(len(param_list), integer)
-
-    if list_active:
-        param_list = param_list[:]
-    temp_list = []
-    return_list = []
-    if integer < 1:
-        raise ValueError('Invalid value!')
-    if integer == 1 and list_active:
-        return [[param[:]] for param in param_list]
-    elif integer == 1:
-        return [[param] for param in param_list]
-    while integer <= len(param_list):
-        temp_list = param_list[:integer - 1]
-        if list_active:
-            temp_list = [temp[:] for temp in temp_list]
-        # print(temp_list)
-        length = len(param_list)
-        element = integer - 1
-        while element < length:
-            if list_active:
-                temp_list.append(param_list[element][:])
-                # print(temp_list)
-                return_list.append(temp_list)
-                temp_list = [param[:] for param in param_list[:integer-1]]
-            else:
-                temp_list.append(param_list[element])
-                # print(temp_list)
-                return_list.append(temp_list)
-                temp_list = param_list[:integer-1]
-            element += 1
-        param_list.pop(0)
-    return return_list
-
 def generate_all_subsets(A,b):
     equations = []
-    # print(A,b,m)
     a_sets = combo(A[:], m, True)
-    # b_sets = combo(b[:], m)
-    # print(b)
+    b_sets = combo(b[:], m)
     for i in range(len(a_sets)):
-        # print('System:', a_sets[i], b_sets[i])
-        # equations.append(Equation(a_sets[i],b_sets[i]))
-        equations.append(Equation(a_sets[i],[ eq_const[tuple(a)] for a in a_sets[i]]))
-    # print(equations)
+        equations.append(Equation(a_sets[i],b_sets[i]))
     return equations
 
 def check_solutions(m,A,b,solns):
@@ -186,7 +140,6 @@ def possible_infinity(m,A,c):
     """
     coefficient_present = False
     for row in range(len(orig_A)):
-        # print('ye')
         for column in range(m):
             if orig_A[row][column] == 0:
                 # print(row,column)
@@ -225,17 +178,14 @@ def solve_diet_problem(n, m, A, b, c):
         if possible_infinity(m,A,c):
             return [1,soln_set]
     equations = generate_all_subsets(A,b)
+    # print([(equation.a, equation.b) for equation in equations])
     # print(len(equations))
-    # for equation in equations:
-    #     if set(equation.b) == set([1589, -4079, 0]):
-    #         print(equation.a,equation.b)
     solutions = []
-    solution_dicts = []
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
         # print(equation.a, equation.b)
         solns = SolveEquation(equation)
-        # print(solns)
+        # print(solns, equation.a, equation.b)
         if solns:
             # rearrange the solution list so that it matches up with the rest of the matrix
             solns = soln_rearrange(equation)
@@ -250,8 +200,13 @@ def solve_diet_problem(n, m, A, b, c):
     negatives_c = [factor >= 0 for factor in c]
     for solution in solutions:
         for i in range(m):
+            # if one factor and solution exist and facotr>0, zeroing solution out is optimal
+            # note: "one solution" would mean len(A) = 3 because the other two ops are amt >= 0 and <= 10^9
+            if len(A) == 3 and len(solution) == 1 and c[i] < 0:
+                solution[i] = 0
+                total += solution[i] * c[i]
             # if all factors are negative, take the most positive total
-            if negatives_c.count(False) == len(negatives_c):
+            elif negatives_c.count(False) == len(negatives_c) and len(solution) > 1:
                 total += solution[i] * c[i]
             else:
                 # if other options in that inequality exist, use them
@@ -287,7 +242,9 @@ for i in range(m):
 # b.append(0)
 A.append([1 for i in range(m)])
 b.append(10 ** 9)
-eq_const = {tuple(A[i]):b[i] for i in range(len(A))}
+# print(A,b)
+# eq_const = {tuple(A[i]):b[i] for i in range(len(A))}
+# print(eq_const)
 c = list(map(int, stdin.readline().split()))
 # print(A,b,c)
 
