@@ -6,6 +6,7 @@ class Equation:
         self.a = a[:]
         self.b = b[:]
         self.orig_b = b[:]
+        self.orig_a = a[:]
 
 class Position:
     def __init__(self, column, row):
@@ -165,6 +166,7 @@ def soln_rearrange(equation):
         for column in range(len(a[0])):
             if a[row][column] == 1:
                 return_list[column] = b[row]
+    equation.b = return_list
     return return_list
 
 def solve_diet_problem(n, m, A, b, c):
@@ -181,24 +183,29 @@ def solve_diet_problem(n, m, A, b, c):
     # print([(equation.a, equation.b) for equation in equations])
     # print(len(equations))
     solutions = []
+    solutions_to_original = {}
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
         # print(equation.a, equation.b)
         solns = SolveEquation(equation)
-        # print(solns, equation.a, equation.b)
+        # print(solns, equation.orig_a, equation.orig_b)
         if solns:
             # rearrange the solution list so that it matches up with the rest of the matrix
             solns = soln_rearrange(equation)
             if check_solutions(m,A,b,solns):
                 solutions.append(solns)
+                solutions_to_original[tuple(solns)] = tuple(equation.orig_b)
     if not solutions:
         return [-1, soln_set]
-    # print(solutions)
+    # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
     # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
     rolling_total = None
     total = 0
     negatives_c = [factor >= 0 for factor in c]
+    second_negatives_c = [factor < 0 for factor in c]
+    third_negatives_c = [factor == 0 for factor in c]
     for solution in solutions:
+        # something with 0 in c
         for i in range(m):
             # if one factor and solution exist and facotr>0, zeroing solution out is optimal
             # note: "one solution" would mean len(A) = 3 because the other two ops are amt >= 0 and <= 10^9
@@ -208,11 +215,16 @@ def solve_diet_problem(n, m, A, b, c):
             # if all factors are negative, take the most positive total
             elif negatives_c.count(False) == len(negatives_c) and len(solution) > 1:
                 total += solution[i] * c[i]
+            # if all factors are either negative or 0, then (0,0) is the best answer
+            elif second_negatives_c.count(True) + third_negatives_c.count(True) == len(second_negatives_c) and third_negatives_c.count(True) > 0:
+                return [0, soln_set]
             else:
                 # if other options in that inequality exist, use them
-                if c[i] < 0 and len(A[0]) > 1:
+                # ignore solns with 10^9 in orig_b
+                if c[i] < 0 and len(A[0]) > 1: #and 10**9 not in solutions_to_original[tuple(solution)]:
                     solution[i] = 0
                 total += solution[i] * c[i]
+        # print(total, soln_set)
         if rolling_total == None:
             rolling_total = total
             soln_set = solution
@@ -222,8 +234,10 @@ def solve_diet_problem(n, m, A, b, c):
             soln_set = solution
         total = 0
     # final check for infinity
+    # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
     for equation in equations:
         if equation.b == soln_set and 10 ** 9 in equation.orig_b:
+            # print(equation.b, equation.orig_b)
             return [1, soln_set]
     return [0, soln_set]
 
