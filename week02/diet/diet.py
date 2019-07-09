@@ -12,17 +12,6 @@ class Position:
         self.column = column
         self.row = row
 
-def ReadEquation():
-    size = int(input())
-    a = []
-    b = []
-    for row in range(size):
-        line = list(map(float, input().split()))
-        a.append(line[:size])
-        b.append(line[size])
-    # print(a,b)
-    return Equation(a, b)
-
 def SelectPivotElement(a, used_rows, used_columns):
     # This algorithm selects the first free element.
     # You'll need to improve it to pass the problem.
@@ -91,10 +80,42 @@ def SolveEquation(equation):
     return b
 
 def combo(param_list, integer, list_active=False):
+    # print(len(param_list), integer)
+
+    def generate_subsets(param_list):
+        if len(param_list) == 1:
+            return [[param_list[0]],[]]
+        current_subset = generate_subsets(param_list[1:])
+        new_subset = current_subset[:]
+        returned_list = []
+        for i in range(len(new_subset)):
+            new_subset[i] = new_subset[i][:]
+            new_subset[i].append(param_list[0])
+        returned_list += current_subset
+        returned_list += new_subset
+        return returned_list
+
+    returned_list = []
+    subsets = generate_subsets(param_list)
+    for subset in subsets:
+        if len(subset) == integer:
+            if list_active:
+                for i in range(len(subset)):
+                    subset[i] = subset[i][:]
+                returned_list.append(subset)
+            else:
+                returned_list.append(subset)
+    return returned_list
+
+# print(combination([4,5,3],1))
+
+def combom(param_list, integer, list_active=False):
     """
     finds all possible combinations of sets of len integer; performs deepcopy if needed
     Note: copies are modified
     """
+    print(len(param_list), integer)
+
     if list_active:
         param_list = param_list[:]
     temp_list = []
@@ -131,15 +152,16 @@ def generate_all_subsets(A,b):
     equations = []
     # print(A,b,m)
     a_sets = combo(A[:], m, True)
-    b_sets = combo(b[:], m)
+    # b_sets = combo(b[:], m)
     # print(b)
     for i in range(len(a_sets)):
         # print('System:', a_sets[i], b_sets[i])
-        equations.append(Equation(a_sets[i],b_sets[i]))
+        # equations.append(Equation(a_sets[i],b_sets[i]))
+        equations.append(Equation(a_sets[i],[ eq_const[tuple(a)] for a in a_sets[i]]))
     # print(equations)
     return equations
 
-def check_solutions(m,A,b,equation,solns):
+def check_solutions(m,A,b,solns):
     """ checks solutions for validity. returns True if valid, else False. """
     total = 0
     for equation_index in range(len(A)):
@@ -148,13 +170,10 @@ def check_solutions(m,A,b,equation,solns):
         # print(total, equation.a, equation.b)
         if A[equation_index].count(1) == 1 and b[equation_index] == 0:
             if total < b[equation_index]:
-                return 0
+                return False
         elif total > b[equation_index]:
             return False
         total = 0
-    # print(equation.orig_b)
-    # if 10 ** 9 in equation.orig_b:
-    #     return -1
     return True
 
 def possible_infinity(m,A,c):
@@ -181,6 +200,20 @@ def possible_infinity(m,A,c):
             # coefficient_present = False
     return False
 
+def soln_rearrange(equation):
+    """
+    Creates a list in which the index corresponds to the column #.
+    Uses equation.a and equation.b as the matrix and soln, respectively.
+    """
+    a = equation.a
+    b = equation.b
+    return_list = [0 for i in range(len(b))]
+    for row in range(len(a)):
+        for column in range(len(a[0])):
+            if a[row][column] == 1:
+                return_list[column] = b[row]
+    return return_list
+
 def solve_diet_problem(n, m, A, b, c):
     # Write your code here
     soln_set = [0 for num in range(m)]
@@ -192,29 +225,29 @@ def solve_diet_problem(n, m, A, b, c):
         if possible_infinity(m,A,c):
             return [1,soln_set]
     equations = generate_all_subsets(A,b)
-    # print(equations[0].a, equations[0].b)
+    # print(len(equations))
+    # for equation in equations:
+    #     if set(equation.b) == set([1589, -4079, 0]):
+    #         print(equation.a,equation.b)
     solutions = []
+    solution_dicts = []
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
+        # print(equation.a, equation.b)
         solns = SolveEquation(equation)
+        # print(solns)
         if solns:
-            # indicator = check_solutions(m,A,b,equation,solns)
-            # print(indicator)
-            if check_solutions(m,A,b,equation,solns):
+            # rearrange the solution list so that it matches up with the rest of the matrix
+            solns = soln_rearrange(equation)
+            if check_solutions(m,A,b,solns):
                 solutions.append(solns)
     if not solutions:
         return [-1, soln_set]
+    # print(solutions)
     # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
     rolling_total = None
     total = 0
     negatives_c = [factor >= 0 for factor in c]
-    # print(solutions, [(equation.a, equation.b) for equation in equations])
-    # if the "true length", meaning the length without the 10^9 inequality is added in, then fulfill this cond
-    # if len(A)-1 == 1 and len(b)-1 == 1:
-    #     if c[0] > 0:
-    #         rolling_total = solutions[0] * c[0]
-    #         soln_set = solutions[0]
-    #     return [0, soln_set]
     for solution in solutions:
         for i in range(m):
             # if all factors are negative, take the most positive total
@@ -228,10 +261,8 @@ def solve_diet_problem(n, m, A, b, c):
         if rolling_total == None:
             rolling_total = total
             soln_set = solution
-        # print(total, rolling_total)
         # for negatives that have no choice
-        # print(soln_set)
-        if total > rolling_total: #or (len(A[0]) == 1 and rolling_total == 0):
+        if total > rolling_total:
             rolling_total = total
             soln_set = solution
         total = 0
@@ -252,8 +283,11 @@ orig_B = b[:]
 for i in range(m):
     A.append([0 for num in range(i)] + [1] + [0 for num in range(i+1,m)])
     b.append(0)
+# A.append([0,1,0])
+# b.append(0)
 A.append([1 for i in range(m)])
 b.append(10 ** 9)
+eq_const = {tuple(A[i]):b[i] for i in range(len(A))}
 c = list(map(int, stdin.readline().split()))
 # print(A,b,c)
 
