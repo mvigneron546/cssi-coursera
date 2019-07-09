@@ -3,10 +3,10 @@ from sys import stdin
 
 class Equation:
     def __init__(self, a, b):
-        self.a = a[:]
+        self.a = [ele[:] for ele in a]
         self.b = b[:]
         self.orig_b = b[:]
-        self.orig_a = a[:]
+        self.orig_a = [ele[:] for ele in a]
 
 class Position:
     def __init__(self, column, row):
@@ -114,6 +114,7 @@ def generate_all_subsets(A,b):
     b_sets = combo(b[:], m)
     for i in range(len(a_sets)):
         equations.append(Equation(a_sets[i],b_sets[i]))
+        # equations.append(Equation(a_sets[i], [ eq_const[tuple(a)] for a in a_sets[i]]))
     return equations
 
 def check_solutions(m,A,b,solns):
@@ -122,13 +123,14 @@ def check_solutions(m,A,b,solns):
     for equation_index in range(len(A)):
         for index in range(m):
             total += A[equation_index][index] * solns[index]
-        # print(total, equation.a, equation.b)
+        # print(solns, total, (A[equation_index], b[equation_index]))#, equation.a, equation.b)
         if A[equation_index].count(1) == 1 and b[equation_index] == 0:
             if total < b[equation_index]:
                 return False
         elif total > b[equation_index]:
             return False
         total = 0
+    # print()
     return True
 
 def possible_infinity(m,A,c):
@@ -172,6 +174,8 @@ def soln_rearrange(equation):
 def solve_diet_problem(n, m, A, b, c):
     # Write your code here
     soln_set = [0 for num in range(m)]
+    rolling_total = None
+    total = 0
     # case where pleasure factors are 0; no need to go any further
     if c.count(0) == len(c):
         return [0, soln_set]
@@ -181,9 +185,8 @@ def solve_diet_problem(n, m, A, b, c):
             return [1,soln_set]
     equations = generate_all_subsets(A,b)
     # print([(equation.a, equation.b) for equation in equations])
-    # print(len(equations))
+    # print()
     solutions = []
-    solutions_to_original = {}
     # only put in viable solutions. If there aren't any, then the problem has no solution
     for equation in equations:
         # print(equation.a, equation.b)
@@ -194,52 +197,63 @@ def solve_diet_problem(n, m, A, b, c):
             solns = soln_rearrange(equation)
             if check_solutions(m,A,b,solns):
                 solutions.append(solns)
-                solutions_to_original[tuple(solns)] = tuple(equation.orig_b)
+                for i in range(m):
+                    total += solns[i] * c[i]
+                if rolling_total == None:
+                    rolling_total = total
+                    soln_set = solns
+                if total > rolling_total:
+                    rolling_total = total
+                    soln_set = solns
+                total = 0
     if not solutions:
         return [-1, soln_set]
-    # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
-    # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
-    rolling_total = None
-    total = 0
-    negatives_c = [factor >= 0 for factor in c]
-    second_negatives_c = [factor < 0 for factor in c]
-    third_negatives_c = [factor == 0 for factor in c]
-    for solution in solutions:
-        # something with 0 in c
-        for i in range(m):
-            # if one factor and solution exist and facotr>0, zeroing solution out is optimal
-            # note: "one solution" would mean len(A) = 3 because the other two ops are amt >= 0 and <= 10^9
-            if len(A) == 3 and len(solution) == 1 and c[i] < 0:
-                solution[i] = 0
-                total += solution[i] * c[i]
-            # if all factors are negative, take the most positive total
-            elif negatives_c.count(False) == len(negatives_c) and len(solution) > 1:
-                total += solution[i] * c[i]
-            # if all factors are either negative or 0, then (0,0) is the best answer
-            elif second_negatives_c.count(True) + third_negatives_c.count(True) == len(second_negatives_c) and third_negatives_c.count(True) > 0:
-                return [0, soln_set]
-            else:
-                # if other options in that inequality exist, use them
-                # ignore solns with 10^9 in orig_b
-                if c[i] < 0 and len(A[0]) > 1: #and 10**9 not in solutions_to_original[tuple(solution)]:
-                    solution[i] = 0
-                total += solution[i] * c[i]
-        # print(total, soln_set)
-        if rolling_total == None:
-            rolling_total = total
-            soln_set = solution
-        # for negatives that have no choice
-        if total > rolling_total:
-            rolling_total = total
-            soln_set = solution
-        total = 0
-    # final check for infinity
-    # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
     for equation in equations:
         if equation.b == soln_set and 10 ** 9 in equation.orig_b:
             # print(equation.b, equation.orig_b)
             return [1, soln_set]
     return [0, soln_set]
+    # # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
+    # # now try all possible combos of solutions that pass through all inequalities. If a metric in c is negative, use 0 instead.
+    # # negatives_c = [factor >= 0 for factor in c]
+    # # second_negatives_c = [factor < 0 for factor in c]
+    # # third_negatives_c = [factor == 0 for factor in c]
+    # for solution in solutions:
+    #     # something with 0 in c
+    #     for i in range(m):
+    #         # if one factor and solution exist and facotr>0, zeroing solution out is optimal
+    #         # note: "one solution" would mean len(A) = 3 because the other two ops are amt >= 0 and <= 10^9
+    #         # if len(A) == 3 and len(solution) == 1 and c[i] < 0:
+    #         #     solution[i] = 0
+    #         #     total += solution[i] * c[i]
+    #         # # if all factors are negative, take the most positive total
+    #         # elif negatives_c.count(False) == len(negatives_c) and len(solution) > 1:
+    #         #     total += solution[i] * c[i]
+    #         # # if all factors are either negative or 0, then (0,0) is the best answer
+    #         # elif second_negatives_c.count(True) + third_negatives_c.count(True) == len(second_negatives_c) and third_negatives_c.count(True) > 0:
+    #         #     return [0, soln_set]
+    #         # else:
+    #         #     # if other options in that inequality exist, use them
+    #         #     # ignore solns with 10^9 in orig_b
+    #         #     if c[i] < 0 and len(A[0]) > 1: #and 10**9 not in solutions_to_original[tuple(solution)]:
+    #         #         solution[i] = 0
+    #         total += solution[i] * c[i]
+    #     # print(total, soln_set)
+    #     if rolling_total == None:
+    #         rolling_total = total
+    #         soln_set = solution
+    #     if total > rolling_total:
+    #         rolling_total = total
+    #         soln_set = solution
+    #     total = 0
+    # # final check for infinity
+    # # print([(equation.orig_b, equation.b, equation.orig_a, equation.a) for equation in equations])
+    # # print(soln_set, total)
+    # for equation in equations:
+    #     if equation.b == soln_set and 10 ** 9 in equation.orig_b:
+    #         # print(equation.b, equation.orig_b)
+    #         return [1, soln_set]
+    # return [0, soln_set]
 
 n, m = list(map(int, stdin.readline().split()))
 A = []
@@ -257,7 +271,8 @@ for i in range(m):
 A.append([1 for i in range(m)])
 b.append(10 ** 9)
 # print(A,b)
-# eq_const = {tuple(A[i]):b[i] for i in range(len(A))}
+# print()
+eq_const = {tuple(A[i]):b[i] for i in range(len(A))}
 # print(eq_const)
 c = list(map(int, stdin.readline().split()))
 # print(A,b,c)
