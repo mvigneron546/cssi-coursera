@@ -27,13 +27,13 @@ def printEquisatisfiableSatFormula():
         list_formulas.append(' '.join(vars + ['0']))
 
     # add CNF for each vertex must occupy only one position
-    # CNF: exactly_one_of([x11, x12, ...])
+    # CNF: exactly_one_of([xij]) where j = 1,2,3,...n
     for vertex in range(1, n+1):
         same_vertex_positions = [str(var_map[str(vertex) + str(position)]) for position in range(1, n+1)]
         list_formulas += exactly_one_of(same_vertex_positions)
 
     # add in CNF for no two vertices can occupy the same position
-    # CNF: (-x11 V -x21 V ...) (-x12 V -x22 V ...) ...
+    # CNF: exactly_one_of([xij]) where i = 1,2,3...n
     for position in range(1, n+1):
         same_position_vertices = [str(var_map[str(vertex) + str(position)]) for vertex in range(1, n+1)]
         list_formulas += exactly_one_of(same_position_vertices)
