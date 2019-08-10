@@ -31,13 +31,13 @@ def printEquisatisfiableSatFormula():
         same_position_vertices = [str(var_map[str(vertex) * 2 + str(position)]) for vertex in range(1, n+1)]
         list_formulas += exactly_one_of(same_position_vertices)
 
-    for vertex1 in range(1, n+1):
-        for vertex2 in range(1, n+1):
-            if [vertex1, vertex2] not in edges and [vertex2, vertex1] not in edges and vertex1 != vertex2:
-                for i in range(1, n):
-                    vertex_var = str(vertex1) * 2 + str(i)
-                    adjacent_var = str(vertex2) * 2 + str(i+1)
-                    list_formulas.append('-{} -{} 0'.format(var_map[vertex_var], var_map[adjacent_var]))
+    # for vertex1 in range(1, n+1):
+    #     for vertex2 in range(1, n+1):
+    #         if [vertex1, vertex2] not in edges and [vertex2, vertex1] not in edges and vertex1 != vertex2:
+    #             for i in range(1, n):
+    #                 vertex_var = str(vertex1) * 2 + str(i)
+    #                 adjacent_var = str(vertex2) * 2 + str(i+1)
+    #                 list_formulas.append('-{} -{} 0'.format(var_map[vertex_var], var_map[adjacent_var]))
 
     # add CNF that all vertices in a possible path must be connected by an edge
     # CNF: (-xik V -xjk+1) if (k, k+1) not in E
@@ -57,7 +57,7 @@ def printEquisatisfiableSatFormula():
         # list_formulas = ['1 1', '1 0']
     print('\n'.join(list_formulas))
     # print(var_map, len(var_map))
-    # sat_solve(list_formulas)
+    sat_solve(list_formulas)
     write_file(list_formulas)
 
 def exactly_one_of(iterable):
