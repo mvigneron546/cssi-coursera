@@ -13,17 +13,32 @@ def printEquisatisfiableSatFormula():
     list_formulas = [''] # first index will contain length
     var_map = {} # dict that will map all vars to the natural numbers.
     counter = 1
+    vars = []
 
-    # add CNF for each vertex must occupy only one position; also takes into account that all vars need to occupy positions
-    # CNF: exactly_one_of([xij]) where j = 1,2,3,...n
+    # all nodes appear on path
     for vertex in range(1, n+1):
-        vars = []
         for position in range(1, n+1):
             vertex_var = str(vertex) * 2 + str(position)
             var_map[vertex_var] = counter
             counter += 1
             vars.append(str(var_map[vertex_var]))
-        list_formulas += exactly_one_of(vars)
+    list_formulas.append(' '.join(vars + ['0']))
+
+    # add CNF for each vertex must occupy only one position; also takes into account that all vars need to occupy positions
+    # CNF: exactly_one_of([xij]) where j = 1,2,3,...n
+    for pos1, pos2 in itertools.combinations([pos for pos in range(1,n+1)], 2):
+        for vertex in range(1, n+1):
+            vertex_var = str(vertex) * 2 + str(pos1)
+            # print(vertex_var)
+            adjacent_var = str(vertex) * 2 + str(pos2)
+            # print(adjacent_var)
+            list_formulas.append('-{} -{} 0'.format(var_map[vertex_var], var_map[adjacent_var]))
+
+    # for vertex in range(1, n+1):
+    #     for position in range(1, n+1):
+    #         vertex_var = str(vertex) * 2 + str(position)
+    #         vars.append(str(var_map[vertex_var]))
+    #     list_formulas += exactly_one_of(vars)
 
     # add in CNF for no two vertices can occupy the same position
     # CNF: exactly_one_of([xij]) where i = 1,2,3...n
@@ -57,8 +72,8 @@ def printEquisatisfiableSatFormula():
         # list_formulas = ['1 1', '1 0']
     print('\n'.join(list_formulas))
     # print(var_map, len(var_map))
-    sat_solve(list_formulas)
-    write_file(list_formulas)
+    # sat_solve(list_formulas)
+    # write_file(list_formulas)
 
 def exactly_one_of(iterable):
     """returns exactly one of iterable in CNF form as a list of strings."""
