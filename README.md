@@ -5,3 +5,13 @@
     - Edmonds-Karp and Ford-Fulkerson Algorithms
     - Bipartite Matching, Image Segmentation
   - Week 02: Linear Programming
+    - Gaussian Elimination
+    - Solution-finding on a Polyhedron (LP)
+    - Dualities/simplex (not covered, but introduced)
+  - Week 03: NP-Complete Problems
+    - Different types of NP problems (TSP, Hamiltonian Path, CNF, independent set)
+    - P vs NP, NP-completeness and reductions
+    - Reducing graph searches to 3-CNF
+  - Week 04: Coping with NP-completeness
+    - Three different types of algorithms: special case, exact algorithms, and approximate algorithms
+    - Introduction to Dynamic Programming, local searches, branch and bound techniques, backtracking
