@@ -8,7 +8,7 @@ clauses = [ list(map(int, input().split())) for i in range(m) ]
 # print(n,m,clauses)
 
 class Vertex:
-    def __init__(u):
+    def __init__(self,u):
         self.index = u
         self.out_neighbors = [] # vertices that can be traversed in the forward direction (u -> v)
         self.in_neighbors = [] # vertices that can be traversed in the backward direction (t -> u)
@@ -19,6 +19,7 @@ class Vertex:
 def isSatisfiable():
     graph = construct_implication_graph(clauses)
     # print(graph)
+    # print([(v.index, v.out_neighbors) for v in graph.values()])
     find_SCCs(graph)
 
     for mask in range(1<<n):
@@ -45,20 +46,26 @@ def construct_implication_graph(clauses):
     """
     graph = {} # u -> v stored as [u,v]
     for i in range(1,n+1):
-        graph[i] = []
-        graph[-i] = []
+        # graph[i] = []
+        # graph[-i] = []
+        graph[i] = Vertex(i)
+        graph[-i] = Vertex(-i)
     for clause in clauses:
         u = clause[0]
         if len(clause) == 1:
             # graph.append([-clause[0], clause[0]])
-            graph[-u].append(u)
+            graph[-u].out_neighbors.append(u)
+            graph[u].in_neighbors.append(-u)
+            # graph[-u].append(u)
         elif len(clause) == 2:
             v = clause[1]
             # print(u,v)
             # graph.append([-clause[0], clause[1]])
             # graph.append([-clause[1], clause[0]])
-            graph[-u].append(v)
-            graph[-v].append(u)
+            graph[-u].out_neighbors.append(v)
+            graph[v].in_neighbors.append(-u)
+            graph[-v].out_neighbors.append(u)
+            graph[u].in_neighbors.append(-v)
     return graph
 
 def find_SCCs(graph):
@@ -71,6 +78,7 @@ def find_SCCs(graph):
     print(L)
     # now assign values to root, forming SCCs
     for vertex in L:
+        assign(vertex)
 
 
 def visit(graph, u, explored, L):
@@ -79,7 +87,7 @@ def visit(graph, u, explored, L):
     if u not in explored:
         explored.add(u)
         L.insert(0, u)
-        for v in graph[u]:
+        for v in graph[u].out_neighbors:
             # print(v, v not in explored, explored)
             visit(graph, v, explored, L)
 
