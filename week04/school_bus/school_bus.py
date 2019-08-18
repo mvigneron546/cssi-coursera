@@ -53,6 +53,7 @@ def optimal_path(graph):
     return (graph.best_weight, [x + 1 for x in graph.best_path])
 
 def find_optimal_path(graph, from_vertex, to_vertex, explored, cur_weight, cur_path):
+    """ solves TSPs using the branch and bound technique. Unfortunately still too slow. """
     if from_vertex != to_vertex:
         cur_weight += graph.graph[from_vertex][to_vertex]
     explored.add(to_vertex)
