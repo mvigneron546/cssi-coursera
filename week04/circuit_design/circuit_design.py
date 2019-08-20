@@ -36,6 +36,10 @@ def isSatisfiable():
     for vertex in roots:
         if -vertex in graph[vertex].scc:
             return None
+        # also check that components and their inverses aren't in the scc
+        for literal in graph[vertex].scc:
+            if -literal in graph[vertex].scc:
+                return None
     # as roots contains the reverse topological order of the sccs, just go backwards and fill solns
     result = [None] * n
     for scc_root in roots:
@@ -85,7 +89,7 @@ def find_SCCs(graph, function):
     return function(graph)
 
 def kosaraju(graph):
-    """ uses Kosaraju's Algorithm to generate the SCCs. returns a list of vertex roots of the SCCs. """
+    """ uses Kosaraju's Algorithm to generate the SCCs. returns a list of vertex roots of the SCCs. potentially bugged as it didn't pass. """
     L = [] #list that stores traversals
     explored = set()
     # visit each vertex via dfs
