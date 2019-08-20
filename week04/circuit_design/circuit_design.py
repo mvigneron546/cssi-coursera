@@ -26,19 +26,17 @@ class Vertex:
         self.discovered = -1 # when it was discovered
         self.on_stack = False
 
-# This solution tries all possible 2^n variable assignments.
-# It is too slow to pass the problem.
-# Implement a more efficient algorithm here.
 def isSatisfiable():
     graph = construct_implication_graph(clauses)
     # print(graph)
     # print([(v.index, v.out_neighbors, v.in_neighbors) for v in graph.values()])
     roots = find_SCCs(graph, tarjans)
-    # print(roots)
+    # roots = find_SCCs(graph, kosaraju)[::-1]
+    # print(roots, {root: graph[root].scc for root in roots})
     for vertex in roots:
         if -vertex in graph[vertex].scc:
             return None
-    # as roots contains the topological order of the sccs, just go backwards and fill solns
+    # as roots contains the reverse topological order of the sccs, just go backwards and fill solns
     result = [None] * n
     for scc_root in roots:
         # print(graph[scc_root].scc)
@@ -138,10 +136,16 @@ def strongconnect(vertex, stack, index, graph, roots):
     # generate the SCC if conditions are correct
     if vertex.discovered == vertex.lowlink:
         # print(vertex.index)
+        # print(vertex.index, [v.index for v in stack])
+        # popped_vertex = False
         while len(stack) != 0:
             v = stack.pop(-1)
             vertex.scc.add(v.index)
             v.on_stack = False
+            # pop the stack only up and including the current root
+            if v == vertex:
+                break
+        # while vertex != v
         roots.append(vertex.index)
 
 def visit(u, graph, explored, L):
