@@ -21,6 +21,10 @@ class Vertex:
         self.in_neighbors = [] # vertices that can be traversed in the backward direction (t -> u)
         self.scc = set() # will hold the set of the strongly connected components this vertex is part of
         self.root = False # will determine if this is the root of the SCC
+        # tarjan-specific variables
+        self.lowlink = -1 # smallest discovered vertex reachable from this one
+        self.discovered = -1 # when it was discovered
+        self.on_stack = False
 
 # This solution tries all possible 2^n variable assignments.
 # It is too slow to pass the problem.
@@ -29,18 +33,21 @@ def isSatisfiable():
     graph = construct_implication_graph(clauses)
     # print(graph)
     # print([(v.index, v.out_neighbors, v.in_neighbors) for v in graph.values()])
-    roots = find_SCCs(graph)
+    roots = find_SCCs(graph, tarjans)
+    # print(roots)
     for vertex in roots:
         if -vertex in graph[vertex].scc:
             return None
     # as roots contains the topological order of the sccs, just go backwards and fill solns
     result = [None] * n
-    for scc_root in roots[::-1]:
+    for scc_root in roots:
+        # print(graph[scc_root].scc)
         for literal in graph[scc_root].scc:
             if graph[literal].value == -1:
                 graph[literal].value = 1
                 # print(literal)
                 result[abs(literal) - 1] = literal
+                # print(result)
                 graph[-literal].value = 0
     # print(result)
     return result
@@ -75,7 +82,11 @@ def construct_implication_graph(clauses):
             graph[u].in_neighbors.append(-v)
     return graph
 
-def find_SCCs(graph):
+def find_SCCs(graph, function):
+    """ uses either Kosaraju's or Tarjan's to find SCCs. """
+    return function(graph)
+
+def kosaraju(graph):
     """ uses Kosaraju's Algorithm to generate the SCCs. returns a list of vertex roots of the SCCs. """
     L = [] #list that stores traversals
     explored = set()
@@ -88,10 +99,50 @@ def find_SCCs(graph):
     roots = [] # stores roots of SCCs in topological order
     for vertex in L:
         assign(vertex, vertex, graph, assigned, roots)
+
     # scc_roots_graph = { vertex : graph[vertex] for vertex in graph.keys() if graph[vertex].root }
     # print({vertex : graph[vertex].scc for vertex in scc_roots_graph.keys()}, {vertex : graph[vertex].out_neighbors for vertex in graph.keys()})
     # print(roots)
     return roots
+
+def tarjans(graph):
+    """ uses Tarjan's Algorithm to generate the SCCs. returns a list of roots in reverse topological order. """
+    index = 0
+    stack = []
+    roots = []
+    for vertex in graph.keys():
+        if graph[vertex].discovered == -1:
+            strongconnect(graph[vertex], stack, index, graph, roots)
+            # print(stack, roots)
+    return roots
+
+def strongconnect(vertex, stack, index, graph, roots):
+    """ Helper for Tarjan's. Generates the SCCs. vertex input is the Vertex object. """
+    vertex.discovered = index
+    vertex.lowlink = index
+    index += 1
+    stack.append(vertex)
+    vertex.on_stack = True
+
+    # dfs
+    for out_vertex_index in vertex.out_neighbors:
+        if graph[out_vertex_index].discovered == -1:
+            # not visited; recurse
+            strongconnect(graph[out_vertex_index], stack, index, graph, roots)
+            vertex.lowlink = min(vertex.lowlink, graph[out_vertex_index].lowlink)
+        elif graph[out_vertex_index].on_stack:
+            # the vertex is on the stack; back edge case
+            # the out_vertex is the root
+            vertex.lowlink = min(vertex.lowlink, graph[out_vertex_index].discovered)
+
+    # generate the SCC if conditions are correct
+    if vertex.discovered == vertex.lowlink:
+        # print(vertex.index)
+        while len(stack) != 0:
+            v = stack.pop(-1)
+            vertex.scc.add(v.index)
+            v.on_stack = False
+        roots.append(vertex.index)
 
 def visit(u, graph, explored, L):
     """
@@ -124,6 +175,7 @@ def main():
         print("UNSATISFIABLE")
     else:
         print("SATISFIABLE");
-        print(" ".join(str(-i-1 if result[i] else i+1) for i in range(n)))
+        # print(" ".join(str(-i-1 if result[i] else i+1) for i in range(n)))
+        print(" ".join([str(i) for i in result]))
 
 threading.Thread(target=main).start()
