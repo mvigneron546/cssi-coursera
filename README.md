@@ -15,3 +15,6 @@
   - Week 04: Coping with NP-completeness
     - Three different types of algorithms: special case, exact algorithms, and approximate algorithms
     - Introduction to Dynamic Programming, local searches, branch and bound techniques, backtracking
+    - 2-SAT Solver using Tarjan's Algorithm to find Strongly Connected Components
+    - Solving for weighted independent sets using DP
+    - Branch-and-bound technique for TSP
