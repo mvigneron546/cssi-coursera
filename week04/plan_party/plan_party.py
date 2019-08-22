@@ -13,6 +13,8 @@ class Vertex:
         self.weight = weight
         self.children = []
         self.optimal_weight = -1
+        self.on_stack = False
+        self.solved = False
 
 def ReadTree():
     size = int(input())
@@ -21,57 +23,76 @@ def ReadTree():
         a, b = list(map(int, input().split()))
         tree[a - 1].children.append(b - 1)
         tree[b - 1].children.append(a - 1)
+    # print([v.children for v in tree])
     return tree
 
 def dfs(tree, vertex, parent):
-    print(parent, vertex, tree[vertex].children)
-    for child in tree[vertex].children:
-        if child != parent:
-            dfs(tree, child, vertex)
+    """ linear time algorithm that checks for independent set solutions. Employs DP for optimization."""
+    # DP optimization
+    if tree[vertex].solved:
+        return tree[vertex].optimal_weight
+    # print(parent, vertex) #, tree[vertex].children)
+    child_weights = 0 # combined weight of children and their grandchildren
+    grand_child_weights = tree[vertex].weight #combined weight of parent + grandchildren
+    tree[vertex].on_stack = True
 
-    # This is a template function for processing a tree using depth-first search.
-    # Write your code here.
-    # You may need to add more parameters to this function for child processing.
-    if len(tree[vertex].children) == 1:
-        if tree[vertex].children[0] == parent:
-            tree[vertex].optimal_weight = tree[vertex].weight
-            return
-    for child in tree[vertex].children:
-        if child != parent:
-            tree[vertex].optimal_weight += tree[child].optimal_weight
-    #     return vertex.weight
+    # leaf conditional
+    explored_children_set = {tree[child].on_stack for child in tree[vertex].children}
+    if False not in explored_children_set:
+        tree[vertex].on_stack = False
+        tree[vertex].solved = True
+        tree[vertex].optimal_weight = tree[vertex].weight
+        return tree[vertex].weight
 
+    # recurse on grandchildren
+    for child in tree[vertex].children:
+        if not tree[child].on_stack:
+            for grand_child in tree[child].children:
+                # print('Stats:', parent, vertex, child, grand_child, tree[vertex].children)
+                # if vertex == 0:
+                #     print(grand_child, child)
+                if child != grand_child and grand_child != parent and not tree[grand_child].on_stack:
+                    # print('Stats after cond:', parent, vertex, child, grand_child, tree[vertex].children)
+                    tree[child].on_stack = True
+                    result = dfs(tree, grand_child, child)
+                    grand_child_weights += result
+                    # for i in range(len(tree)):
+                    #     if vertex == i:
+                    #         print('Grandchildren for {}:'.format(i), grand_child_weights)
+                    #         print('Result from vertex {}: {}'.format(grand_child, result))
+            tree[child].on_stack = False
+
+    for child in tree[vertex].children:
+        if child != parent and not tree[child].on_stack:
+            result = dfs(tree, child, vertex)
+            child_weights += result
+            # for i in range(len(tree)):
+            #     if vertex == i:
+            #         print('Children for {}:'.format(i), child_weights)
+            #         print('Result from vertex {}: {}'.format(child, result))
+            # print('Children weights:', child_weights, vertex)
+
+    tree[vertex].on_stack = False
+    tree[vertex].solved = True
+    tree[vertex].optimal_weight = max(child_weights, grand_child_weights)
+    # for i in range(len(tree)):
+    #     if vertex == i:
+    #         print('{}:'.format(i), child_weights, grand_child_weights)
+    # print([vertex for vertex in tree if vertex.on_stack])
+    return tree[vertex].optimal_weight
 
 def MaxWeightIndependentTreeSubset(tree, vertex, parent):
     size = len(tree)
     if size == 0:
         return 0
-    dfs(tree, 0, -1)
-    # You must decide what to return.
-    return tree[0].optimal_weight
-    # if not tree[vertex].children:
-    #     return tree[vertex].weight
-    # # compute for current vertex and grandchildren
-    # first_weight = tree[vertex].weight
-    # for child in tree[vertex].children:
-    #     if child != parent:
-    #         for grand_child in tree[child].children:
-    #             if grand_child != vertex:
-    #                 first_weight += MaxWeightIndependentTreeSubset(tree, grand_child, child)
-    # # compute for children only
-    # second_weight = 0
-    # for child in tree[vertex].children:
-    #     if child != vertex:
-    #         second_weight += MaxWeightIndependentTreeSubset(tree, child, vertex)
-    # return max(first_weight, second_weight)
-
+    return dfs(tree, 0, -1)
 
 def main():
     tree = ReadTree()
     # print(tree)
     weight = MaxWeightIndependentTreeSubset(tree, 0, -1)
-    print([v.children for v in tree])
-    print([v.optimal_weight for v in tree])
+    # print([v.children for v in tree])
+    # print([v.optimal_weight for v in tree])
     print(weight)
 
 
